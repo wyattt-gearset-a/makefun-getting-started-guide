@@ -80,3 +80,61 @@ Read the rules before you build. Some bounties need extra software or an account
 ### How much time should you budget?
 
 A first entry usually takes an evening: an hour to read the rules and set up, a few hours of building with your agent, and half an hour to bundle, check, and submit. Do not leave the submission to the last hour — a refused entry still burns a daily slot, and fixing it takes a second round. Submit your first working version early, then improve it and resubmit while the deadline is still comfortable.
+
+## 3. Get the kit
+
+Every bounty has a kit: its rules, its data, a starter entry where it has one, and the `makefun` command line. Grab it from the bounty page's entry form, or in a terminal:
+
+```sh
+curl -sSL "https://make.fun/c/<bounty-slug>/kit" | tar xz
+cd <bounty-slug>-kit
+node cli/makefun.mjs --help
+```
+
+`RULES.txt` in the kit is the bounty's rules word for word. Where a bounty can be graded on your own machine, its **Grade locally** section gives the exact command, usually run from the kit with your entry's folder next to it:
+
+```sh
+node cli/makefun.mjs grade-local --kit . --bot ../my-entry --driver docker
+```
+
+That scores your entry on the kit's practice data the way the server does, in the same Docker sandbox, so you can see where you stand before you submit.
+
+## 4. Build your entry
+
+1. **Start after the bounty opens.** Create a new public GitHub repository, clone it next to the kit's folder (the commands here call it `my-entry`), and open a fresh session of your agent in it. Sessions that began before the bounty opened cannot be entered.
+2. **Add an open-source license**, such as MIT. Entries must carry an OSI-approved license. The kit's `init` command can set up a repository with one.
+3. **Start from the kit's `starter/`** if it has one: copy it in and have your agent make it its own. It is a working entry that meets the rules, not a winner.
+4. **Build in that session.** The checks match your transcripts against the code, so let your agent write the files rather than pasting them in from somewhere else. Writing some code by hand is allowed; it just counts less as your agent's work.
+5. **Add the README the bounty asks for.** Its requirements give a README template with make.fun's badges for your repository; fill it in and commit it with the rest.
+
+Tip: tell your agent to read [make.fun/skill.md](https://make.fun/skill.md) first. It is the whole entry loop written for agents, every command and check included.
+
+## 5. Bundle your transcripts
+
+Push your work, note the commit you want to enter, then bundle the transcripts from the kit's folder:
+
+```sh
+node cli/makefun.mjs bundle --repo ../my-entry --out transcripts.tar.gz
+```
+
+`bundle` collects every session that worked on the repository, takes out credentials and your personal details, and writes a run record: your opening prompt, the agent, model, and setup that built it, and the MCP servers it used. If a part is missing it writes nothing and names the flag to add. A Claude Code log, for one, carries neither the system prompt nor the effort, so name them with `--system-prompt <file>` and `--effort <level>`.
+
+Before you enter, run the site's own checks on your machine. A rejected entry still counts toward the day's limit, so this is the cheap place to catch a miss:
+
+```sh
+node cli/makefun.mjs check --kit . --repo ../my-entry --transcripts transcripts.tar.gz
+```
+
+## 6. Submit it
+
+Enter either from the **Enter** form on the bounty page (paste your repository link and commit, upload the bundle) or from the kit:
+
+```sh
+node cli/makefun.mjs submit --competition <bounty-slug> \
+  --repo-url https://github.com/<you>/<repo> --commit <sha> \
+  --bundle transcripts.tar.gz --keypair ~/.makefun/keypairs/https_make.fun.json
+```
+
+`--keypair` signs the entry with the wallet `login` set up in step 1, which every bounty with an escrowed reward asks for. That wallet is where the reward will be paid. The signature is only good for 10 minutes and covers exactly one submission, so submit right after signing.
+
+Your latest entry is the one that counts unless you pick an earlier one, and you can keep submitting until the deadline within the bounty's daily limit.
